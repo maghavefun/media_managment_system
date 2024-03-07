@@ -1,0 +1,44 @@
+version: '3'
+services:
+  
+  #user database
+  user_db:
+    image: postgres:16-alpine
+    ports:
+      - "5433:5433"
+    expose:
+    - "5433"
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - ~/apps/user_db:/var/lib/postgresql/data
+    container_name: user_db
+    command: -p 5433
+
+  #user service
+  user_ms:
+    build: 
+      dockerfile: Dockerfile
+      context: ./user_ms
+    container_name: user_ms
+    ports:
+      - "8001-8001"
+    restart: always
+    depends_on:
+      - user_db
+    volumes:
+      - .:/app
+      - /app/user_ms/node_modules
+
+  #reverse-proxy
+  nginx-proxy:
+    build: 
+      dockerfile: Dockerfile
+      context: ./proxy
+    container_name: nginx_proxy
+    depends_on:
+      - user_ms
+    ports:
+    - "8000:80"
